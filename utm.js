@@ -1,19 +1,12 @@
 ;(function(){
   const SHORT_DOMAIN = 'i.gps-glaz.ru/i/';
   const UTM_STORAGE_KEY = 'GPSGLAZ_UTM';
-  const METRIKA_ID = 97223916;
 
   const SLUG_CAMPAIGN = {
     ozon: 'vendor_org_98506',
     wb: '281702-id-site',
     ym: 'market-site'
   };
-
-  const SLUG_GOALS = [
-    'obdozon','obdwb','obdym',
-    'liteozon','litewb','liteym',
-    'u40ozon','u40wb','u40ym'
-  ];
 
   function getCurrentUTMFromURL() {
     const p = new URLSearchParams(window.location.search);
@@ -38,18 +31,6 @@
       result.set(k, v);
     }
     return result;
-  }
-
-  function ensureYMGoal(slug, tries = 5) {
-    const trySend = () => {
-      if (typeof ym === 'function') {
-        console.log('[YM goal]', slug);
-        ym(METRIKA_ID, 'reachGoal', slug);
-      } else if (tries > 0) {
-        setTimeout(() => trySend(slug, tries - 1), 300);
-      }
-    };
-    trySend();
   }
 
   function getGuaranteedUTM(slug = '') {
@@ -114,10 +95,6 @@
 
     base.set('af_sub1', slug);
     base.set('af_channel', 'site');
-
-    if (SLUG_GOALS.includes(slug)) {
-      ensureYMGoal(slug);
-    }
 
     try {
       const parsed = new URL(url);
