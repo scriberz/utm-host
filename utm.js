@@ -2,22 +2,18 @@
   const SHORT_DOMAIN = 'i.gps-glaz.ru/i/';
   const TILDA_COOKIE = 'TILDAUTM=';
 
-  function getUTMFromCookie() {
+  function getRawTildaUTM() {
     const match = document.cookie.split('; ').find(row => row.startsWith(TILDA_COOKIE));
-    if (!match) return '';
-    try {
-      return decodeURIComponent(match.substring(TILDA_COOKIE.length));
-    } catch (e) {
-      return '';
-    }
+    return match ? decodeURIComponent(match.substring(TILDA_COOKIE.length)) : '';
   }
 
-  function parseSlug(url) {
-    return url.split('/').pop().toLowerCase();
-  }
-
-  function parseUTMString(utmString) {
-    return new URLSearchParams(utmString);
+  function parseTildaUTM(raw) {
+    const params = new URLSearchParams();
+    raw.split('|||').forEach(pair => {
+      const [k, v] = pair.split('=');
+      if (k && v) params.set(k.trim(), v.trim());
+    });
+    return params;
   }
 
   function ensureContent(utmParams) {
@@ -38,10 +34,10 @@
 
     if (!url || !url.includes(SHORT_DOMAIN)) return;
 
-    const utmString = getUTMFromCookie();
-    if (!utmString) return;
+    const raw = getRawTildaUTM();
+    if (!raw) return;
 
-    const utmParams = parseUTMString(utmString);
+    const utmParams = parseTildaUTM(raw);
     ensureContent(utmParams);
 
     try {
