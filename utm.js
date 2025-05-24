@@ -73,15 +73,18 @@
     const storedUTM = getUTMFromLocalStorage();
     let base = mergeUTM(urlUTM, storedUTM);
 
+    // если utm пустые — сгенерировать с нуля
     if (![...base.keys()].some(k => k.startsWith('utm_'))) {
       base = getGuaranteedUTM(slug);
     }
 
+    // всегда перезаписывать utm_content
     const ref = document.referrer;
     const content = /google\.|yandex\.|bing\.|duckduckgo\./i.test(ref) ? 'search' : 'directlink';
     base.delete('utm_content');
     base.set('utm_content', content);
 
+    // дублируем защиту
     base.set('utm_source', 'site');
     base.set('utm_medium', 'mpbutton');
 
