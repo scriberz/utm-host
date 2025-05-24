@@ -73,18 +73,16 @@
     const storedUTM = getUTMFromLocalStorage();
     let base = mergeUTM(urlUTM, storedUTM);
 
-    // если utm пустые — сгенерировать с нуля
     if (![...base.keys()].some(k => k.startsWith('utm_'))) {
       base = getGuaranteedUTM(slug);
     }
 
-    // всегда перезаписывать utm_content
+    // обновляем utm_content при каждом клике
     const ref = document.referrer;
     const content = /google\.|yandex\.|bing\.|duckduckgo\./i.test(ref) ? 'search' : 'directlink';
     base.delete('utm_content');
     base.set('utm_content', content);
 
-    // дублируем защиту
     base.set('utm_source', 'site');
     base.set('utm_medium', 'mpbutton');
 
@@ -101,10 +99,17 @@
 
     try {
       const parsed = new URL(url);
+
+      // 🔥 удаляем старые utm-параметры из ссылки
+      parsed.search = parsed.search.replace(/([?&])utm_[^=]+=[^&]+/gi, '$1').replace(/[?&]$/, '');
+
+      // добавляем обновлённые метки
       for (const [k, v] of base.entries()) {
         parsed.searchParams.set(k, v);
       }
+
       url = parsed.toString();
+      console.log('[UTM FINAL URL]', url);
     } catch (err) {
       console.warn('UTM script error:', err);
     }
