@@ -20,6 +20,14 @@
     return new URLSearchParams(utmString);
   }
 
+  function ensureContent(utmParams) {
+    if (!utmParams.has('utm_content')) {
+      const ref = document.referrer;
+      const content = /google\.|yandex\.|bing\.|duckduckgo\./i.test(ref) ? 'search' : 'directlink';
+      utmParams.set('utm_content', content);
+    }
+  }
+
   window.addEventListener('click', function(e) {
     const el = e.target.closest('a, [data-url], [onclick]');
     if (!el) return;
@@ -30,15 +38,22 @@
 
     if (!url || !url.includes(SHORT_DOMAIN)) return;
 
-    const slug = parseSlug(url);
-    const utmParams = parseUTMString(getUTMFromCookie());
+    const utmString = getUTMFromCookie();
+    if (!utmString) return;
 
-    if (!utmParams.has('utm_content')) {
-      utmParams.set('utm_content', /google\.|yandex\.|bing\.|duckduckgo\./i.test(document.referrer) ? 'search' : 'directlink');
+    const utmParams = parseUTMString(utmString);
+    ensureContent(utmParams);
+
+    try {
+      const parsed = new URL(url);
+      for (const [k, v] of utmParams.entries()) {
+        parsed.searchParams.set(k, v);
+      }
+      url = parsed.toString();
+      console.log('[TILDAUTM FINAL URL]', url);
+      el.setAttribute('href', url);
+    } catch (err) {
+      console.warn('UTM rewrite error:', err);
     }
-
-    const sep = url.includes('?') ? '&' : '?';
-    url += sep + utmParams.toString();
-    el.setAttribute('href', url);
   }, true);
 })();
