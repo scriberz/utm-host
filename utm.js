@@ -16,12 +16,10 @@
     return params;
   }
 
-  function ensureContent(utmParams) {
-    if (!utmParams.has('utm_content')) {
-      const ref = document.referrer;
-      const content = /google\.|yandex\.|bing\.|duckduckgo\./i.test(ref) ? 'search' : 'directlink';
-      utmParams.set('utm_content', content);
-    }
+  function forceContent(utmParams) {
+    const ref = document.referrer;
+    const content = /google\.|yandex\.|bing\.|duckduckgo\./i.test(ref) ? 'search' : 'directlink';
+    utmParams.set('utm_content', content); // 💥 всегда перезаписываем
   }
 
   window.addEventListener('click', function(e) {
@@ -31,25 +29,29 @@
     let url = el.getAttribute('href')
              || el.getAttribute('data-url')
              || (el.getAttribute('onclick')||'').match(/https?:\/\/[^\']+/)?.[0];
-
     if (!url || !url.includes(SHORT_DOMAIN)) return;
 
     const raw = getRawTildaUTM();
     if (!raw) return;
 
     const utmParams = parseTildaUTM(raw);
-    ensureContent(utmParams);
+    forceContent(utmParams); // 💥 utm_content точно будет
 
     try {
       const parsed = new URL(url);
+      // 💥 удаляем ВСЕ существующие utm_
+      parsed.search = parsed.search.replace(/([?&])utm_[^=]+=[^&]+/gi, '$1').replace(/[?&]$/, '');
+
+      // добавляем актуальные метки
       for (const [k, v] of utmParams.entries()) {
         parsed.searchParams.set(k, v);
       }
+
       url = parsed.toString();
-      console.log('[TILDAUTM FINAL URL]', url);
+      console.log('[FINAL URL with content]', url);
       el.setAttribute('href', url);
     } catch (err) {
-      console.warn('UTM rewrite error:', err);
+      console.warn('UTM build error:', err);
     }
   }, true);
 })();
